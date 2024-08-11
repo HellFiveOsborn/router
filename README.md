@@ -100,6 +100,7 @@ $router = new Router("https://www.youdomain.com");
 $router->namespace("Test");
 
 // $router->setAssets(__DIR__ . '/public/');
+// $router->setAssets(__DIR__ . '/public/')->setCache(60|false) 60 seconds | false to disable the cache;
 
 $router->get("/route", "Controller:method");
 $router->post("/route/{id}", "Controller:method");

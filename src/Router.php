@@ -10,6 +10,9 @@ namespace CoffeeCode\Router;
  */
 class Router extends Dispatch
 {
+    /** @var int|false */
+    protected $cacheTime = false;
+
     /**
      * Router constructor.
      *
@@ -30,30 +33,77 @@ class Router extends Dispatch
         $filePath = realpath($assetsPath . ltrim($path, '/'));
 
         if ($filePath && is_file($filePath) && strpos($filePath, $assetsPath) === 0) {
-            // Get the MIME type of the file
-            $finfo = finfo_open(FILEINFO_MIME_TYPE);
-            $mimeType = finfo_file($finfo, $filePath);
-            finfo_close($finfo);
-
-            // Configure headers for caching
+            $mimeType = $this->getMimeType($filePath);
             $lastModified = filemtime($filePath);
             $eTag = md5_file($filePath);
 
             header("Content-Type: {$mimeType}");
-            header("Cache-Control: public, max-age=31536000");
-            header("Last-Modified: " . gmdate("D, d M Y H:i:s", $lastModified) . " GMT");
-            header("ETag: \"{$eTag}\"");
+            
+            if ($this->cacheTime !== false) {
+                header("Cache-Control: public, max-age={$this->cacheTime}");
+                header("Last-Modified: " . gmdate("D, d M Y H:i:s", $lastModified) . " GMT");
+                header("ETag: \"{$eTag}\"");
 
-            // Check if the file has been modified
-            if ($this->notModified($lastModified, $eTag)) {
-                header("HTTP/1.1 304 Not Modified");
-                exit;
+                if ($this->notModified($lastModified, $eTag)) {
+                    header("HTTP/1.1 304 Not Modified");
+                    exit;
+                }
+            } else {
+                header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+                header("Cache-Control: post-check=0, pre-check=0", false);
+                header("Pragma: no-cache");
             }
 
-            // Serve the file
             $this->readFileChunked($filePath);
             exit;
         }
+    }
+
+    /**
+     * @param string $filePath
+     * @return string
+     */
+    private function getMimeType(string $filePath): string
+    {
+        $mimeTypes = [
+            'css' => 'text/css',
+            'js' => 'application/javascript',
+            'json' => 'application/json',
+            'txt' => 'text/plain',
+            'html' => 'text/html',
+            'htm' => 'text/html',
+            'xml' => 'application/xml',
+            'jpg' => 'image/jpeg',
+            'jpeg' => 'image/jpeg',
+            'png' => 'image/png',
+            'gif' => 'image/gif',
+            'svg' => 'image/svg+xml',
+            'ico' => 'image/x-icon',
+            'mp3' => 'audio/mpeg',
+            'wav' => 'audio/wav',
+            'mp4' => 'video/mp4',
+            'webm' => 'video/webm',
+            'pdf' => 'application/pdf',
+            'zip' => 'application/zip',
+            'doc' => 'application/msword',
+            'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'xls' => 'application/vnd.ms-excel',
+            'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'ppt' => 'application/vnd.ms-powerpoint',
+            'pptx' => 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        ];
+
+        $extension = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+        
+        if (isset($mimeTypes[$extension])) {
+            return $mimeTypes[$extension];
+        }
+
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mimeType = finfo_file($finfo, $filePath);
+        finfo_close($finfo);
+
+        return $mimeType ?: 'application/octet-stream';
     }
 
     /**
@@ -106,6 +156,16 @@ class Router extends Dispatch
     public function setAssets(string $assetsPath): Router
     {
         $this->assetsPath = rtrim($assetsPath, '/') . '/';
+        return $this;
+    }
+
+    /**
+     * @param int|false $time
+     * @return Router
+     */
+    public function setCache(int|false $time): Router
+    {
+        $this->cacheTime = $time;
         return $this;
     }
 
