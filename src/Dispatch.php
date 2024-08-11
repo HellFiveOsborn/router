@@ -45,6 +45,9 @@ abstract class Dispatch
     /** @var int */
     protected ?int $error = null;
 
+    /** @var string|null */
+    protected ?string $assetsPath = null;
+
     /** @const int Bad Request */
     public const BAD_REQUEST = 400;
 
@@ -56,7 +59,7 @@ abstract class Dispatch
 
     /** @const int Not Implemented */
     public const NOT_IMPLEMENTED = 501;
-
+    
     /**
      * Dispatch constructor.
      *
@@ -182,6 +185,10 @@ abstract class Dispatch
      */
     public function dispatch(): bool
     {
+        if ($this->assetsPath) {
+            $this->assets($this->assetsPath);
+        }
+
         if (empty($this->routes) || empty($this->routes[$this->httpMethod])) {
             $this->error = self::NOT_IMPLEMENTED;
             return false;
