@@ -99,6 +99,8 @@ $router = new Router("https://www.youdomain.com");
  */
 $router->namespace("Test");
 
+// $router->setAssets(__DIR__ . '/public/');
+
 $router->get("/route", "Controller:method");
 $router->post("/route/{id}", "Controller:method");
 $router->put("/route/{id}/profile", "Controller:method");
