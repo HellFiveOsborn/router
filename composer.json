@@ -20,9 +20,22 @@
   "require": {
     "php": ">=8.0"
   },
+  "require-dev": {
+    "pestphp/pest": "^2.0"
+  },
   "autoload": {
     "psr-4": {
       "CoffeeCode\\Router\\": "src"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "CoffeeCode\\Router\\Tests\\": "tests/"
+    }
+  },
+  "config": {
+    "allow-plugins": {
+      "pestphp/pest-plugin": true
     }
   }
 }

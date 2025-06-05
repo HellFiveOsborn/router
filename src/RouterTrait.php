@@ -19,8 +19,8 @@ trait RouterTrait
         string $method,
         string $route,
         callable|string $handler,
-        string $name = null,
-        array|string $middleware = null
+        ?string $name = null,
+        array|string|null $middleware = null
     ): void {
         $route = rtrim($route, "/");
 
@@ -62,7 +62,8 @@ trait RouterTrait
      */
     protected function formSpoofing(): void
     {
-        $post = filter_input_array(INPUT_POST, FILTER_DEFAULT);
+        // Usa $_POST diretamente se filter_input_array retornar null (útil para testes)
+        $post = filter_input_array(INPUT_POST, FILTER_DEFAULT) ?? $_POST ?? [];
 
         if (!empty($post['_method']) && in_array($post['_method'], ["PUT", "PATCH", "DELETE"])) {
             $this->httpMethod = $post['_method'];
@@ -73,9 +74,11 @@ trait RouterTrait
         }
 
         if ($this->httpMethod == "POST") {
-            $this->data = filter_input_array(INPUT_POST, FILTER_DEFAULT);
+            $this->data = filter_input_array(INPUT_POST, FILTER_DEFAULT) ?? $_POST ?? [];
 
-            unset($this->data["_method"]);
+            if (isset($this->data["_method"])) {
+                unset($this->data["_method"]);
+            }
             return;
         }
 
@@ -83,7 +86,9 @@ trait RouterTrait
             parse_str(file_get_contents('php://input', false, null, 0, $_SERVER['CONTENT_LENGTH']), $putPatch);
             $this->data = $putPatch;
 
-            unset($this->data["_method"]);
+            if (isset($this->data["_method"])) {
+                unset($this->data["_method"]);
+            }
             return;
         }
 
@@ -184,7 +189,7 @@ trait RouterTrait
      * @param array|null $data
      * @return string|null
      */
-    private function treat(array $route_item, array $data = null): ?string
+    private function treat(array $route_item, ?array $data = null): ?string
     {
         $route = $route_item["route"];
         if (!empty($data)) {
@@ -208,7 +213,7 @@ trait RouterTrait
      * @param array|null $params
      * @return string
      */
-    private function process(string $route, array $arguments, array $params = null): string
+    private function process(string $route, array $arguments, ?array $params = null): string
     {
         $params = (!empty($params) ? "?" . http_build_query($params) : null);
         return str_replace(array_keys($arguments), array_values($arguments), $route) . "{$params}";
