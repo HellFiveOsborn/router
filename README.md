@@ -34,14 +34,24 @@ equipe UpInside. Com eles você executa tarefas rotineiras com poucas linhas, es
 
 Router is available via Composer:
 
-```bash
-"coffeecode/router": "2.0.*"
+1. **Add the repository to your `composer.json`:**
+```json
+{
+  "repositories": [
+    {
+      "type": "vcs",
+      "url": "https://github.com/HellFiveOsborn/router"
+    }
+  ],
+  "require": {
+    "coffeecode/router": "dev-master"
+  }
+}
 ```
 
-or run
-
+2. Execute
 ```bash
-composer require coffeecode/router
+composer update
 ```
 
 ## Documentation
@@ -77,9 +87,9 @@ RewriteRule ^(.*)$ index.php?route=/$1 [L,QSA]
 
 ````nginxconfig
 location / {
-  if ($script_filename !~ "-f"){
-    rewrite ^(.*)$ /index.php?route=/$1 break;
-  }
+  ...
+  try_files $uri $uri/ /index.php?route=$uri&$query_string;
+  ...
 }
 ````
 
