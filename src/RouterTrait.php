@@ -23,38 +23,50 @@ trait RouterTrait
         array|string|null $middleware = null
     ): void {
         $route = rtrim($route, "/");
-
-        $removeGroupFromPath = $this->group ? str_replace($this->group, "", $this->path) : $this->path;
-        $pathAssoc = trim($removeGroupFromPath, "/");
-        $routeAssoc = trim($route, "/");
-
-        preg_match_all("~\{\s* ([a-zA-Z_][a-zA-Z0-9_-]*) \}~x", $routeAssoc, $keys, PREG_SET_ORDER);
-        $routeDiff = array_values(array_diff_assoc(explode("/", $pathAssoc), explode("/", $routeAssoc)));
-
-        $this->formSpoofing();
-        $offset = 0;
-        foreach ($keys as $key) {
-            $this->data[$key[1]] = ($routeDiff[$offset++] ?? null);
+        if ($route === "") {
+            $route = "/";
         }
 
-        $route = (!$this->group ? $route : "/{$this->group}{$route}");
-        $data = $this->data;
+        // Apply group prefix to the route for matching and storage
+        $fullRoute = (!$this->group ? $route : "/{$this->group}{$route}");
+        // Normalize double slashes and ensure root stays "/"
+        $fullRoute = preg_replace('~//+~', '/', $fullRoute);
+        if ($fullRoute === "") {
+            $fullRoute = "/";
+        }
+
+        // Extract parameter names and optional constraints {name:pattern}
+        preg_match_all('~{([a-zA-Z_][a-zA-Z0-9_-]*)(?::([^}]+))?}~', $fullRoute, $tokens, PREG_SET_ORDER);
+        $paramNames = [];
+        $regex = preg_replace_callback(
+            '~{([a-zA-Z_][a-zA-Z0-9_-]*)(?::([^}]+))?}~',
+            static function ($m) use (&$paramNames) {
+                $paramNames[] = $m[1];
+                $pattern = isset($m[2]) && $m[2] !== '' ? $m[2] : '[^/]+';
+                return '(' . $pattern . ')';
+            },
+            $fullRoute
+        );
+
+        // Prepare route payload (data will be resolved at dispatch time)
         $namespace = $this->namespace;
-        $middleware = $middleware ?? (!empty($this->middleware[$this->group]) ? $this->middleware[$this->group] : null);
-        $router = function () use ($method, $handler, $data, $route, $name, $namespace, $middleware) {
+        $resolvedMiddleware = $middleware ?? (!empty($this->middleware[$this->group]) ? $this->middleware[$this->group] : null);
+
+        $router = function () use ($method, $handler, $fullRoute, $name, $namespace, $resolvedMiddleware, $paramNames) {
             return [
-                "route" => $route,
+                "route" => $fullRoute,
                 "name" => $name,
                 "method" => $method,
-                "middlewares" => $middleware,
+                "middlewares" => $resolvedMiddleware,
                 "handler" => $this->handler($handler, $namespace),
                 "action" => $this->action($handler),
-                "data" => $data
+                "data" => null,
+                "paramNames" => $paramNames
             ];
         };
 
-        $route = preg_replace('~{([^}]*)}~', "([^/]+)", $route);
-        $this->routes[$method][$route] = $router();
+        // Store compiled regex as key so dispatch can match quickly
+        $this->routes[$method][$regex] = $router();
     }
 
     /**

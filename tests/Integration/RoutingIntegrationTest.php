@@ -306,7 +306,7 @@ describe('Error Handling', function () {
         expect($this->router->error())->toBe(404);
     });
 
-    it('returns 501 for unsupported method', function () {
+    it('returns 405 for unsupported method with Allow header', function () {
         simulateRequest('POST', '/get-only');
         
         $this->router->get('/get-only', function() {
@@ -316,7 +316,7 @@ describe('Error Handling', function () {
         $result = $this->router->dispatch();
         
         expect($result)->toBeFalse();
-        expect($this->router->error())->toBe(501);
+        expect($this->router->error())->toBe(405);
     });
 });
 

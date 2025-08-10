@@ -1,4 +1,4 @@
-# Guia de Execução dos Testes - CoffeeCode Router
+# Guia de Execução dos Testes - Router @HellFiveOsborn (Fork of CoffeeCode Router)
 
 ## Instalação Rápida
 
@@ -21,7 +21,7 @@ composer install
 ### ✅ Arquivos de Configuração
 - `phpunit.xml` - Configuração base (Pest usa PHPUnit por baixo)
 - `tests/Pest.php` - Configuração específica do Pest
-- `composer.json` - Atualizado com Pest PHP
+- `composer.json` - Atualizado com Pest PHP e binário de listagem de rotas
 
 ### ✅ Testes Unitários (tests/Unit/)
 - `RouterTest.php` - 26 testes para classe Router
@@ -118,7 +118,7 @@ composer install
 ```php
 <?php
 
-use CoffeeCode\Router\Router;
+use CoffeeCode\Router\Router; // namespace mantido por compatibilidade
 
 beforeEach(function () {
     $this->router = new Router('http://localhost');
@@ -239,7 +239,7 @@ jobs:
 
 ## Por que Pest?
 
-### Vantagens sobre PHPUnit tradicional:
+### Vantagens sobre PHPUnit tradicional
 
 1. **Sintaxe mais limpa**:
    ```php

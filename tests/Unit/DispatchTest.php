@@ -248,7 +248,7 @@ describe('Dispatch Process', function () {
         
         $result = $this->dispatch->dispatch();
         expect($result)->toBeFalse();
-        expect($this->dispatch->error())->toBe(Dispatch::NOT_IMPLEMENTED);
+        expect($this->dispatch->error())->toBe(Dispatch::METHOD_NOT_ALLOWED);
     });
 
     it('returns false when route not found', function () {
